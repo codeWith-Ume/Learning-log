@@ -1,5 +1,7 @@
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from .models import Topic, Entry
 from .forms import TopicForm, EntryForm
 
@@ -8,19 +10,23 @@ def index(request):
     return render(request, 'logs/index.html')
 
 
+@login_required
 def topics(request):
     topics = Topic.objects.order_by('date_added')
     return render(request, 'logs/topics.html', {'topics': topics})
 
 
+@login_required
 def topic(request, topic_id):
     topic = get_object_or_404(Topic, id=topic_id)
     entries = topic.entry_set.order_by('-date_added')
+    return render(
+        request, 'logs/topic.html',
+        {'topic': topic, 'entries': entries}
+    )
 
-    return render(request, 'logs/topic.html',
-                  {'topic': topic, 'entries': entries})
 
-
+@login_required
 def new_topic(request):
     if request.method != 'POST':
         form = TopicForm()
@@ -35,6 +41,7 @@ def new_topic(request):
     return render(request, 'logs/new_topic.html', {'form': form})
 
 
+@login_required
 def new_entry(request, topic_id):
     topic = get_object_or_404(Topic, id=topic_id)
 
@@ -49,15 +56,17 @@ def new_entry(request, topic_id):
             new_entry.save()
             return redirect('logs:topic', topic_id=topic.id)
 
-    return render(request, 'logs/new_entry.html',
-                  {'topic': topic, 'form': form})
+    return render(
+        request, 'logs/new_entry.html',
+        {'topic': topic, 'form': form}
+    )
 
 
+@login_required
 def edit_entry(request, entry_id):
     entry = get_object_or_404(Entry, id=entry_id)
     topic = entry.topic
 
-    # owner check
     if entry.owner != request.user:
         messages.error(request, "You can't edit this entry.")
         return redirect('logs:topics')
@@ -70,10 +79,13 @@ def edit_entry(request, entry_id):
             form.save()
             return redirect('logs:topic', topic_id=topic.id)
 
-    return render(request, 'logs/edit_entry.html',
-                  {'entry': entry, 'topic': topic, 'form': form})
+    return render(
+        request, 'logs/edit_entry.html',
+        {'entry': entry, 'topic': topic, 'form': form}
+    )
 
 
+@login_required
 def delete_topic(request, topic_id):
     topic = get_object_or_404(Topic, id=topic_id)
 
@@ -86,6 +98,7 @@ def delete_topic(request, topic_id):
     return redirect('logs:topics')
 
 
+@login_required
 def delete_entry(request, entry_id):
     entry = get_object_or_404(Entry, id=entry_id)
 
